@@ -40,8 +40,17 @@
 // There is an init function on the game which is what gets called when the games starts
 // This starts a tick function which checks the location of the objects within the game
 
-
 // Currently the new HTML overwrites the other so that they are never in the same location!!!
+
+// ***********************
+
+// 12th Aug:
+// Don't let the player move outside of the boundary walls
+// Get more than one piece of loot going
+
+// TODO:
+// Get the pieces of loot moving around in random directions
+//
 
 
   var Game = {};
@@ -51,8 +60,8 @@
     var Grid = function() {};
 
     Grid.prototype.getRandomCell = function() {
-      var randomX = Math.floor(Math.random() * 50) + 1,
-        randomY = Math.floor(Math.random() * 50) + 1,
+      var randomX = Math.floor(Math.random() * 25) + 1,
+        randomY = Math.floor(Math.random() * 25) + 1,
         randomCell = [ randomX, randomY ];
       return randomCell;
     };
@@ -61,7 +70,7 @@
       var gridCells = document.querySelectorAll('.grid__cell'),
         xPosition = coords[0],
         yPosition = coords[1],
-        gridRow = (yPosition - 1) * 50,
+        gridRow = (yPosition - 1) * 25,
         gridCell = gridRow + (xPosition - 1),
         selected = gridCells[gridCell];
       return selected;
@@ -70,7 +79,7 @@
 
     Grid.prototype.setCellContent = function( location, instance ) {
       instance.location = location;
-      Game.grid.getCell(location).innerHTML = instance.template;
+      Game.grid.getCell(location).classList.add(instance.templateClass);
     };
 
     return Grid;
@@ -81,7 +90,7 @@
   var Player = (function() {
 
     var Player = function() {
-      this.template = '<div class="player"></div>';
+      this.templateClass = 'player';
       bindEvents();
       this.score = 0;
     };
@@ -116,16 +125,22 @@
       if ( y !== 0 ) {
         newY = oldY + y;
       }
+      if ((newY > 25) || (newY < 1)) {
+        newY = oldY;
+      }
+      if ((newX > 25) || (newX < 1)) {
+        newX = oldX;
+      }
       newLocation = [ newX, newY ];
       Game.player.location = newLocation;
-      Game.grid.getCell( oldLocation ).innerHTML = '';
-      Game.grid.getCell( newLocation ).innerHTML = '<div class="player"></div>';
+      Game.grid.getCell( oldLocation ).classList.remove('player');
+      Game.grid.getCell( newLocation ).classList.add('player');
     }
 
     Player.prototype.incrementScore = function() {
-      console.log('score:' + this.score);
       this.score++;
-      console.log(this.score);
+      document.querySelector('.score').innerHTML = this.score;
+      // console.log(this.score);
     };
 
     return Player;
@@ -135,39 +150,99 @@
 
   var Loot = (function() {
     var Loot = function() {
-      this.template = '<div class="loot"></div>';
+      this.templateClass = 'loot';
     };
     return Loot;
 
   })();
 
+  Game = {
 
-  var Game = {
     grid: null,
     player: null,
     loot: null,
+
+    createLoot: function(){
+      var arr = ['a','b','c'],
+        lootArr = arr.map( function(){
+          return new Loot();
+        } );
+      return lootArr;
+    },
+
     setStartLocation: function( gameElement ) {
       var randomCell = this.grid.getRandomCell();
       this.grid.setCellContent( randomCell, gameElement );
     },
+
+    setLootStartLocations: function(){
+
+      var lootWithLocation = this.loot.map(function(current){
+        return Game.setStartLocation( current );
+      });
+      return lootWithLocation;
+
+    },
+
+    showScore: function( player ) {
+      var score = player.score;
+      document.querySelector('.score').innerHTML = score;
+    },
+
     init: function() {
       this.grid = new Grid();
       this.player = new Player();
-      this.loot = new Loot();
+      this.loot = this.createLoot();
       this.setStartLocation( this.player );
-      this.setStartLocation( this.loot );
-      //setInterval( this.tick, 500 );
+      this.setLootStartLocations();
+      this.showScore( this.player );
+      setInterval( this.tick, 500 );
     },
+
     tick: function() {
-      console.log('tick');
-      if ( Game.player.location === Game.loot.location ) {
-        console.log('location player:' + Game.player.location + 'location loot:' +  Game.loot.location);
-        Game.player.incrementScore();
+
+      var numLoot = Game.loot.length;
+
+      for (var i=0; i < numLoot; i++) {
+
+        if ( (Game.player.location[0]) === (Game.loot[i].location[0]) && (Game.player.location[1]) === (Game.loot[i].location[1]) ) {
+          Game.player.incrementScore();
+          Game.grid.getCell( Game.loot[i].location ).classList.remove('loot');
+
+          var randomCell = Game.grid.getRandomCell();
+          Game.loot[i].location = randomCell;
+          Game.grid.setCellContent( randomCell, Game.loot[i] );
+        }
       }
+
     }
+
   };
 
   Game.init();
 
 })();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

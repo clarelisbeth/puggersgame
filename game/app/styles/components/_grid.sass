@@ -8,17 +8,27 @@
   margin: 0 auto
 
 .grid__cell
-  width: 15px
-  height: 15px
+  width: 30px
+  height: 30px
   border-left: 1px solid white
   border-bottom: 1px solid white
   background: rgba(coral,0.3)
   float: left
 
 .player
-  background: green
-  height: inherit
+  height: 30px
+  background: white
+  &:before
+    content: ''
+    display: block
+    width: 30px
+    height: 30px
+    background: url(../images/puggers.png)
+    background-size: contain
+    background-position: center
+    background-repeat: no-repeat
+    z-index: 20
 
 .loot
   background: blue
-  height: inherit
+  height: 30px
