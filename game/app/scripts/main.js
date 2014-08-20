@@ -3,26 +3,26 @@
   'use strict';
 
 
-    // game
-    // constructor: new game:
-    // creates new player - in random square
-    // creates a few magazines in random squares
-    // starts tick function which checks in every half second to check the state of the game
+// game
+// constructor: new game:
+// creates new player - in random square
+// creates a few magazines in random squares
+// starts tick function which checks in every half second to check the state of the game
 
-    // player
-    // constructor
-    // moves from square to square using arrow keys
+// player
+// constructor
+// moves from square to square using arrow keys
 
-    // magazine
-    // constructor
+// magazine
+// constructor
 
-    // score
-    // updates when player and magazine overlap
+// score
+// updates when player and magazine overlap
 
 
-    // TODO NEXT
-    // need state on player, so that I know where it should move from and to on key up function
-    // player position on the app element that I update when the events
+// TODO NEXT
+// need state on player, so that I know where it should move from and to on key up function
+// player position on the app element that I update when the events
 
 // ***********************
 
@@ -48,9 +48,13 @@
 // Don't let the player move outside of the boundary walls
 // Get more than one piece of loot going
 
-// TODO:
+// ***********************
+
+// 19th Aug
 // Get the pieces of loot moving around in random directions
-//
+// put in fences that the loot and player cannot get through
+
+// ***********************
 
 
   var Game = {};
@@ -81,6 +85,38 @@
       instance.location = location;
       Game.grid.getCell(location).classList.add(instance.templateClass);
     };
+
+    Grid.prototype.changeLootLocation = function(lootPiece) {
+      var oldLocation = lootPiece.location,
+        oldX = oldLocation[0],
+        oldY = oldLocation[1],
+        newX = oldX,
+        newY = oldY,
+        newLocation = '',
+        x = Math.floor(Math.random() * 3) - 1,
+        y = Math.floor(Math.random() * 3) - 1;
+      if ( x !== 0 ) {
+        newX = oldX + x;
+      }
+      if ( x === 0 ) {
+        newY = oldY + y;
+      }
+      if ((newY > 25) || (newY < 1)) {
+        newY = oldY;
+      }
+      if ((newX > 25) || (newX < 1)) {
+        newX = oldX;
+      }
+      newLocation = [ newX, newY ];
+      Game.grid.updateItemLocation( oldLocation, newLocation, lootPiece, 'loot' );
+    };
+
+    Grid.prototype.updateItemLocation = function (oldLocation, newLocation, item, itemClass) {
+      item.location = newLocation;
+      Game.grid.getCell( oldLocation ).classList.remove(itemClass);
+      Game.grid.getCell( newLocation ).classList.add(itemClass);
+    };
+
 
     return Grid;
 
@@ -131,16 +167,18 @@
       if ((newX > 25) || (newX < 1)) {
         newX = oldX;
       }
+
       newLocation = [ newX, newY ];
-      Game.player.location = newLocation;
-      Game.grid.getCell( oldLocation ).classList.remove('player');
-      Game.grid.getCell( newLocation ).classList.add('player');
+      if (Game.grid.getCell(newLocation).classList.contains('fence')) {
+        newLocation = oldLocation;
+      }
+
+      Game.grid.updateItemLocation( oldLocation, newLocation, Game.player, 'player' );
     }
 
     Player.prototype.incrementScore = function() {
       this.score++;
       document.querySelector('.score').innerHTML = this.score;
-      // console.log(this.score);
     };
 
     return Player;
@@ -156,11 +194,22 @@
 
   })();
 
+
+  var Fence = (function() {
+    var Fence = function() {
+      this.templateClass = 'fence';
+    };
+    return Fence;
+  })();
+
+
+
   Game = {
 
     grid: null,
     player: null,
     loot: null,
+    fence: null,
 
     createLoot: function(){
       var arr = ['a','b','c'],
@@ -168,6 +217,12 @@
           return new Loot();
         } );
       return lootArr;
+    },
+
+    createFence: function(){
+      var fence = new Fence();
+      Game.setStartLocation(fence);
+      return fence;
     },
 
     setStartLocation: function( gameElement ) {
@@ -193,10 +248,11 @@
       this.grid = new Grid();
       this.player = new Player();
       this.loot = this.createLoot();
+      this.fence = this.createFence();
       this.setStartLocation( this.player );
       this.setLootStartLocations();
       this.showScore( this.player );
-      setInterval( this.tick, 500 );
+      setInterval( this.tick, 300 );
     },
 
     tick: function() {
@@ -204,14 +260,17 @@
       var numLoot = Game.loot.length;
 
       for (var i=0; i < numLoot; i++) {
-
+        
+        Game.grid.changeLootLocation(Game.loot[i]);
+        
         if ( (Game.player.location[0]) === (Game.loot[i].location[0]) && (Game.player.location[1]) === (Game.loot[i].location[1]) ) {
           Game.player.incrementScore();
+          
           Game.grid.getCell( Game.loot[i].location ).classList.remove('loot');
-
           var randomCell = Game.grid.getRandomCell();
           Game.loot[i].location = randomCell;
           Game.grid.setCellContent( randomCell, Game.loot[i] );
+
         }
       }
 
