@@ -57,6 +57,12 @@
 // ***********************
 
 
+// 2nd September
+// create a random number of fences between 3 and 6, with a random number of blocks between 2 and 10
+// create a predator!!
+
+// ***********************
+
   var Game = {};
 
   var Grid = (function() {
@@ -133,16 +139,16 @@
 
     function bindEvents() {
       document.addEventListener( 'keydown', function(e) {
-        if (e.keyCode == '38') {
+        if (e.keyCode === 38) {
           updatePlayerLocation( 0, -1 );
         }
-        if (e.keyCode == '37') {
+        if (e.keyCode === 37) {
           updatePlayerLocation( -1, 0 );
         }
-        if (e.keyCode == '39') {
+        if (e.keyCode === 39) {
           updatePlayerLocation( 1, 0 );
         }
-        if (e.keyCode == '40') {
+        if (e.keyCode === 40) {
           updatePlayerLocation( 0, 1 );
         }
       });
@@ -219,11 +225,54 @@
       return lootArr;
     },
 
+    // createFence: function(){
+    //   var fence = new Fence(),
+    //     fenceLength = Math.floor(Math.random() * 6);
+    //   Game.setStartLocation(fence);
+    //   fence.location
+    //   return fence;
+    // },
+
     createFence: function(){
-      var fence = new Fence();
-      Game.setStartLocation(fence);
-      return fence;
+      // create a random number of fences, with a random number of blocks
+      var numberOfFences = (Math.floor(Math.random() * 4)) + 4,
+        fenceArr = [];
+
+      fenceArr.length = numberOfFences;
+
+      for (var i=0; i < numberOfFences; i++) {
+
+        var fenceLength = (Math.floor(Math.random() * 6)) + 5,
+          newFence = [],
+          fenceStartLocation;
+
+        newFence.length = fenceLength;
+        Game.setStartLocation(newFence);
+        fenceStartLocation = newFence.location;
+
+        for (var j=1; j < fenceLength; j++) {
+          var index = (Math.floor(Math.random() * 2));
+          newFence[j] = {};
+          newFence[j].location = fenceStartLocation;
+          if (newFence[j].location[index] + 1 < 26) {
+            newFence[j].location[index] = newFence[j].location[index] + 1;
+            console.log(newFence[j].location);
+            Game.grid.getCell( newFence[j].location ).classList.add('fence');
+          }
+        }
+        fenceArr.push(newFence);
+      }
+      console.log(fenceArr);
+      return fenceArr;
     },
+
+    // createFence: function(){
+    //   var arr = ['a','b','c','7'],
+    //     fenceArr = arr.map( function(){
+    //       return new Fence();
+    //     } );
+    //   return fenceArr;
+    // },
 
     setStartLocation: function( gameElement ) {
       var randomCell = this.grid.getRandomCell();
@@ -239,6 +288,19 @@
 
     },
 
+    setFenceStartLocations: function( fence ){
+
+      var fenceLength = this.fence.length;
+      Game.setStartLocation(this.fence[0]);
+
+      var oldLoc = this.fence[0].location;
+      for (var i=1; i < fenceLength; i++) {
+        this.fence[i].location = oldLoc;
+        this.fence[i].location[0] = this.fence[i].location[0] + 1;
+        Game.grid.getCell( this.fence[i].location ).classList.add('fence');
+      }
+    },
+
     showScore: function( player ) {
       var score = player.score;
       document.querySelector('.score').innerHTML = score;
@@ -251,21 +313,21 @@
       this.fence = this.createFence();
       this.setStartLocation( this.player );
       this.setLootStartLocations();
+      //this.setFenceStartLocations();
       this.showScore( this.player );
       setInterval( this.tick, 300 );
     },
-
     tick: function() {
 
       var numLoot = Game.loot.length;
 
       for (var i=0; i < numLoot; i++) {
-        
+
         Game.grid.changeLootLocation(Game.loot[i]);
-        
+
         if ( (Game.player.location[0]) === (Game.loot[i].location[0]) && (Game.player.location[1]) === (Game.loot[i].location[1]) ) {
           Game.player.incrementScore();
-          
+
           Game.grid.getCell( Game.loot[i].location ).classList.remove('loot');
           var randomCell = Game.grid.getRandomCell();
           Game.loot[i].location = randomCell;
@@ -278,7 +340,7 @@
 
   };
 
-  Game.init();
+  document.addEventListener('DOMContentLoaded', Game.init.bind( Game ));
 
 })();
 
