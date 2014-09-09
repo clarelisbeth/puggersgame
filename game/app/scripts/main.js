@@ -236,7 +236,15 @@
         predatorLocY = predatorLocYOld + 1;
       }
 
+      if (((predatorLocX > 25) || (predatorLocX < 1)) ) {
+        predatorLocX = predatorLocXOld;
+      }
+      if (((predatorLocY > 25) || (predatorLocY < 1)) ) {
+        predatorLocY = predatorLocYOld;
+      }
+
       newLocation = [predatorLocX,predatorLocY];
+
       Game.grid.updateItemLocation( oldLocation, newLocation, Game.predator, 'predator' );
 
 
@@ -341,6 +349,11 @@
 
       // move the predator in the direction of the Player
       Game.predator.predatorChase();
+
+      if ( (Game.player.location[0]) === (Game.predator.location[0]) && (Game.player.location[1]) === (Game.predator.location[1]) ) {
+        //alert('FAILLLLLL HHAHAHAHAHHAAAA!!!!!');
+      }
+
 
       for (var i=0; i < numLoot; i++) {
         Game.grid.changeLootLocation(Game.loot[i]);
