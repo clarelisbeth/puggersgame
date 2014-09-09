@@ -59,7 +59,15 @@
 
 // 2nd September
 // create a random number of fences between 3 and 6, with a random number of blocks between 2 and 10
+
+// ***********************
+
+// 9th September
 // create a predator!!
+// create the object
+// move in the direction of the Player - check the location and move towards it
+// make the fences more evenly distributed and maybe a bit straighter?
+// make it so that the loot and predator can't run into the fences
 
 // ***********************
 
@@ -175,7 +183,7 @@
       }
 
       newLocation = [ newX, newY ];
-      if (Game.grid.getCell(newLocation).classList.contains('fence')) {
+      if (Game.grid.getCell(newLocation).classList.contains('fence') ) {
         newLocation = oldLocation;
       }
 
@@ -200,6 +208,44 @@
 
   })();
 
+  var Predator = (function() {
+
+    var Predator = function() {
+      this.templateClass = 'predator';
+    };
+
+    Predator.prototype.predatorChase = function(){
+
+      var playerLocX = Game.player.location[0],
+        playerLocY = Game.player.location[1],
+        predatorLocXOld = this.location[0],
+        predatorLocYOld = this.location[1],
+        oldLocation = [predatorLocXOld, predatorLocYOld],
+        newLocation,
+        predatorLocX = predatorLocXOld,
+        predatorLocY = predatorLocYOld;
+
+      if (playerLocX < predatorLocX) {
+        predatorLocX = predatorLocXOld - 1;
+      } else {
+        predatorLocX = predatorLocXOld + 1;
+      }
+      if (playerLocY < predatorLocY){
+        predatorLocY = predatorLocYOld - 1;
+      } else {
+        predatorLocY = predatorLocYOld + 1;
+      }
+
+      newLocation = [predatorLocX,predatorLocY];
+      Game.grid.updateItemLocation( oldLocation, newLocation, Game.predator, 'predator' );
+
+
+
+    };
+
+    return Predator;
+
+  })();
 
   var Fence = (function() {
     var Fence = function() {
@@ -216,6 +262,7 @@
     player: null,
     loot: null,
     fence: null,
+    predator: null,
 
     createLoot: function(){
       var arr = ['a','b','c'],
@@ -224,14 +271,6 @@
         } );
       return lootArr;
     },
-
-    // createFence: function(){
-    //   var fence = new Fence(),
-    //     fenceLength = Math.floor(Math.random() * 6);
-    //   Game.setStartLocation(fence);
-    //   fence.location
-    //   return fence;
-    // },
 
     createFence: function(){
       // create a random number of fences, with a random number of blocks
@@ -256,23 +295,13 @@
           newFence[j].location = fenceStartLocation;
           if (newFence[j].location[index] + 1 < 26) {
             newFence[j].location[index] = newFence[j].location[index] + 1;
-            console.log(newFence[j].location);
             Game.grid.getCell( newFence[j].location ).classList.add('fence');
           }
         }
         fenceArr.push(newFence);
       }
-      console.log(fenceArr);
       return fenceArr;
     },
-
-    // createFence: function(){
-    //   var arr = ['a','b','c','7'],
-    //     fenceArr = arr.map( function(){
-    //       return new Fence();
-    //     } );
-    //   return fenceArr;
-    // },
 
     setStartLocation: function( gameElement ) {
       var randomCell = this.grid.getRandomCell();
@@ -288,19 +317,6 @@
 
     },
 
-    setFenceStartLocations: function( fence ){
-
-      var fenceLength = this.fence.length;
-      Game.setStartLocation(this.fence[0]);
-
-      var oldLoc = this.fence[0].location;
-      for (var i=1; i < fenceLength; i++) {
-        this.fence[i].location = oldLoc;
-        this.fence[i].location[0] = this.fence[i].location[0] + 1;
-        Game.grid.getCell( this.fence[i].location ).classList.add('fence');
-      }
-    },
-
     showScore: function( player ) {
       var score = player.score;
       document.querySelector('.score').innerHTML = score;
@@ -309,35 +325,39 @@
     init: function() {
       this.grid = new Grid();
       this.player = new Player();
+      this.predator = new Predator();
       this.loot = this.createLoot();
       this.fence = this.createFence();
       this.setStartLocation( this.player );
+      this.setStartLocation( this.predator );
       this.setLootStartLocations();
-      //this.setFenceStartLocations();
       this.showScore( this.player );
       setInterval( this.tick, 300 );
     },
     tick: function() {
 
-      var numLoot = Game.loot.length;
+      var numLoot = Game.loot.length,
+        randomCell;
+
+      // move the predator in the direction of the Player
+      Game.predator.predatorChase();
 
       for (var i=0; i < numLoot; i++) {
-
         Game.grid.changeLootLocation(Game.loot[i]);
-
         if ( (Game.player.location[0]) === (Game.loot[i].location[0]) && (Game.player.location[1]) === (Game.loot[i].location[1]) ) {
           Game.player.incrementScore();
 
+          // put Loot back in a random place - this should also change the image (when I get round to them being images!)
           Game.grid.getCell( Game.loot[i].location ).classList.remove('loot');
-          var randomCell = Game.grid.getRandomCell();
+          randomCell = Game.grid.getRandomCell();
           Game.loot[i].location = randomCell;
           Game.grid.setCellContent( randomCell, Game.loot[i] );
+
 
         }
       }
 
     }
-
   };
 
   document.addEventListener('DOMContentLoaded', Game.init.bind( Game ));
