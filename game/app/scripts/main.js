@@ -71,8 +71,6 @@
 
 // ***********************
 
-  var Game = {};
-
   var Grid = (function() {
 
     var Grid = function() {};
@@ -101,28 +99,9 @@
     };
 
     Grid.prototype.changeLootLocation = function(lootPiece) {
-      var oldLocation = lootPiece.location,
-        oldX = oldLocation[0],
-        oldY = oldLocation[1],
-        newX = oldX,
-        newY = oldY,
-        newLocation = '',
-        x = Math.floor(Math.random() * 3) - 1,
+      var  x = Math.floor(Math.random() * 3) - 1,
         y = Math.floor(Math.random() * 3) - 1;
-      if ( x !== 0 ) {
-        newX = oldX + x;
-      }
-      if ( x === 0 ) {
-        newY = oldY + y;
-      }
-      if ((newY > 25) || (newY < 1)) {
-        newY = oldY;
-      }
-      if ((newX > 25) || (newX < 1)) {
-        newX = oldX;
-      }
-      newLocation = [ newX, newY ];
-      Game.grid.updateItemLocation( oldLocation, newLocation, lootPiece, 'loot' );
+      Game.grid.findNewItemLocation( x, y, lootPiece );
     };
 
     Grid.prototype.updateItemLocation = function (oldLocation, newLocation, item, itemClass) {
@@ -131,44 +110,15 @@
       Game.grid.getCell( newLocation ).classList.add(itemClass);
     };
 
+    Grid.prototype.findNewItemLocation = function ( x, y, item ) {
 
-    return Grid;
-
-  })();
-
-
-  var Player = (function() {
-
-    var Player = function() {
-      this.templateClass = 'player';
-      bindEvents();
-      this.score = 0;
-    };
-
-    function bindEvents() {
-      document.addEventListener( 'keydown', function(e) {
-        if (e.keyCode === 38) {
-          updatePlayerLocation( 0, -1 );
-        }
-        if (e.keyCode === 37) {
-          updatePlayerLocation( -1, 0 );
-        }
-        if (e.keyCode === 39) {
-          updatePlayerLocation( 1, 0 );
-        }
-        if (e.keyCode === 40) {
-          updatePlayerLocation( 0, 1 );
-        }
-      });
-    }
-
-    function updatePlayerLocation( x, y ) {
-      var oldLocation = Game.player.location,
+      var oldLocation = item.location,
         oldX = oldLocation[0],
         oldY = oldLocation[1],
         newX = oldX,
         newY = oldY,
         newLocation = '';
+
       if ( x !== 0 ) {
         newX = oldX + x;
       }
@@ -187,12 +137,42 @@
         newLocation = oldLocation;
       }
 
-      Game.grid.updateItemLocation( oldLocation, newLocation, Game.player, 'player' );
+      Game.grid.updateItemLocation( oldLocation, newLocation, item, item.templateClass );
+    };
+
+    return Grid;
+
+  })();
+
+
+  var Player = (function() {
+
+    var Player = function() {
+      this.templateClass = 'player';
+      bindEvents();
+      this.score = 0;
+    };
+
+    function bindEvents() {
+      document.addEventListener( 'keydown', function(e) {
+        if (e.keyCode === 38) {
+          Game.grid.findNewItemLocation( 0, -1, Game.player );
+        }
+        if (e.keyCode === 37) {
+          Game.grid.findNewItemLocation( -1, 0, Game.player );
+        }
+        if (e.keyCode === 39) {
+          Game.grid.findNewItemLocation( 1, 0, Game.player );
+        }
+        if (e.keyCode === 40) {
+          Game.grid.findNewItemLocation( 0, 1, Game.player );
+        }
+      });
     }
 
     Player.prototype.incrementScore = function() {
       this.score++;
-      document.querySelector('.score').innerHTML = this.score;
+      // document.querySelector('.score').innerHTML = this.score;
     };
 
     return Player;
@@ -215,44 +195,29 @@
     };
 
     Predator.prototype.predatorChase = function(){
-
       var playerLocX = Game.player.location[0],
         playerLocY = Game.player.location[1],
-        predatorLocXOld = this.location[0],
-        predatorLocYOld = this.location[1],
-        oldLocation = [predatorLocXOld, predatorLocYOld],
-        newLocation,
-        predatorLocX = predatorLocXOld,
-        predatorLocY = predatorLocYOld;
-
+        predatorLocX = this.location[0],
+        predatorLocY = this.location[1],
+        x,
+        y;
       if (playerLocX < predatorLocX) {
-        predatorLocX = predatorLocXOld - 1;
+        x =  -1;
+      } else if  (playerLocX > predatorLocX) {
+        x = 1;
       } else {
-        predatorLocX = predatorLocXOld + 1;
+        x = 0;
       }
       if (playerLocY < predatorLocY){
-        predatorLocY = predatorLocYOld - 1;
+        y = -1;
+      } else if (playerLocY > predatorLocY){
+        y = 1;
       } else {
-        predatorLocY = predatorLocYOld + 1;
+        y = 0;
       }
-
-      if (((predatorLocX > 25) || (predatorLocX < 1)) ) {
-        predatorLocX = predatorLocXOld;
-      }
-      if (((predatorLocY > 25) || (predatorLocY < 1)) ) {
-        predatorLocY = predatorLocYOld;
-      }
-
-      newLocation = [predatorLocX,predatorLocY];
-
-      Game.grid.updateItemLocation( oldLocation, newLocation, Game.predator, 'predator' );
-
-
-
+      Game.grid.findNewItemLocation( x, y, Game.predator );
     };
-
     return Predator;
-
   })();
 
   var Fence = (function() {
@@ -264,7 +229,7 @@
 
 
 
-  Game = {
+  var Game = {
 
     grid: null,
     player: null,
@@ -289,7 +254,7 @@
 
       for (var i=0; i < numberOfFences; i++) {
 
-        var fenceLength = (Math.floor(Math.random() * 6)) + 5,
+        var fenceLength = (Math.floor(Math.random() * 10)) + 5,
           newFence = [],
           fenceStartLocation;
 
@@ -318,15 +283,19 @@
 
     setLootStartLocations: function(){
 
-      var lootWithLocation = this.loot.map(function(current){
-        return Game.setStartLocation( current );
-      });
-      return lootWithLocation;
+      // var lootWithLocation = this.loot.map(function(current){
+      //   return Game.setStartLocation( current );
+      // });
+      // return lootWithLocation;
+
+      this.loot.forEach(function(current){
+        this.setStartLocation( current );
+      }, this);
 
     },
 
-    showScore: function( player ) {
-      var score = player.score;
+    showScore: function() {
+      var score = this.player.score;
       document.querySelector('.score').innerHTML = score;
     },
 
@@ -339,11 +308,14 @@
       this.setStartLocation( this.player );
       this.setStartLocation( this.predator );
       this.setLootStartLocations();
-      this.showScore( this.player );
-      setInterval( this.tick, 300 );
+      this.showScore();
+      this.gameLoop = setInterval( this.tick.bind( this ), 300 );
     },
-    tick: function() {
+    // haveCollided: function( x, y ) {
 
+    // }
+    tick: function() {
+      // console.log(Game.player.location + ' ' + Game.predator.location);
       var numLoot = Game.loot.length,
         randomCell;
 
@@ -351,7 +323,8 @@
       Game.predator.predatorChase();
 
       if ( (Game.player.location[0]) === (Game.predator.location[0]) && (Game.player.location[1]) === (Game.predator.location[1]) ) {
-        //alert('FAILLLLLL HHAHAHAHAHHAAAA!!!!!');
+        alert('FAILLLLLL HHAHAHAHAHHAAAA!!!!!');
+        clearInterval( this.gameLoop );
       }
 
 
@@ -359,6 +332,7 @@
         Game.grid.changeLootLocation(Game.loot[i]);
         if ( (Game.player.location[0]) === (Game.loot[i].location[0]) && (Game.player.location[1]) === (Game.loot[i].location[1]) ) {
           Game.player.incrementScore();
+          Game.showScore();
 
           // put Loot back in a random place - this should also change the image (when I get round to them being images!)
           Game.grid.getCell( Game.loot[i].location ).classList.remove('loot');
